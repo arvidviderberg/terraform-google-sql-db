@@ -23,7 +23,7 @@ locals {
   }
 }
 
-resource "google_sql_database_instance" "default" {
+resource "google_sql_database_instance" "master" {
   project          = var.project_id
   name             = var.name
   database_version = var.database_version
@@ -103,10 +103,10 @@ resource "google_sql_database_instance" "default" {
 resource "google_sql_database" "default" {
   name       = var.db_name
   project    = var.project_id
-  instance   = google_sql_database_instance.default.name
+  instance   = google_sql_database_instance.master.name
   charset    = var.db_charset
   collation  = var.db_collation
-  depends_on = [null_resource.module_depends_on, google_sql_database_instance.default]
+  depends_on = [null_resource.module_depends_on, google_sql_database_instance.master]
 }
 
 resource "google_sql_database" "additional_databases" {
@@ -115,25 +115,25 @@ resource "google_sql_database" "additional_databases" {
   name       = var.additional_databases[count.index]["name"]
   charset    = lookup(var.additional_databases[count.index], "charset", "")
   collation  = lookup(var.additional_databases[count.index], "collation", "")
-  instance   = google_sql_database_instance.default.name
-  depends_on = [null_resource.module_depends_on, google_sql_database_instance.default]
+  instance   = google_sql_database_instance.master.name
+  depends_on = [null_resource.module_depends_on, google_sql_database_instance.master]
 }
 
 resource "random_id" "user-password" {
   keepers = {
-    name = google_sql_database_instance.default.name
+    name = google_sql_database_instance.master.name
   }
 
   byte_length = 8
-  depends_on  = [null_resource.module_depends_on, google_sql_database_instance.default]
+  depends_on  = [null_resource.module_depends_on, google_sql_database_instance.master]
 }
 
 resource "google_sql_user" "default" {
   name       = var.user_name
   project    = var.project_id
-  instance   = google_sql_database_instance.default.name
+  instance   = google_sql_database_instance.master.name
   password   = var.user_password == "" ? random_id.user-password.hex : var.user_password
-  depends_on = [null_resource.module_depends_on, google_sql_database_instance.default]
+  depends_on = [null_resource.module_depends_on, google_sql_database_instance.master]
 }
 
 resource "google_sql_user" "additional_users" {
@@ -145,8 +145,8 @@ resource "google_sql_user" "additional_users" {
     "password",
     random_id.user-password.hex,
   )
-  instance   = google_sql_database_instance.default.name
-  depends_on = [null_resource.module_depends_on, google_sql_database_instance.default]
+  instance   = google_sql_database_instance.master.name
+  depends_on = [null_resource.module_depends_on, google_sql_database_instance.master]
 }
 
 resource "null_resource" "module_depends_on" {
