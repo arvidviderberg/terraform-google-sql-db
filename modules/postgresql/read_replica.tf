@@ -42,7 +42,7 @@ resource "google_sql_database_instance" "replicas" {
   name                 = "${var.name}-replica${var.read_replica_name_suffix}${count.index}"
   database_version     = var.database_version
   region               = var.region
-  master_instance_name = google_sql_database_instance.default.name
+  master_instance_name = google_sql_database_instance.master.name
   dynamic "replica_configuration" {
     for_each = [var.read_replica_configuration]
     content {
@@ -109,7 +109,7 @@ resource "google_sql_database_instance" "replicas" {
     }
   }
 
-  depends_on = [google_sql_database_instance.default]
+  depends_on = [google_sql_database_instance.master]
 
 
   lifecycle {
